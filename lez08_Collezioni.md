@@ -40,8 +40,7 @@ for (String element : c) {
 
 ## Collezioni più evidenti
 ### LinkedList
-sono doppiamente linkate  
-posso ottenere in O(1) l'i-esimo elemento  
+sono doppiamente linkate   
 efficente per inserire e rimuovere elementi, poco efficiente per accedere all'i-esimo elemento  
 si aggiunge ad iterator i metodi `add()`, `previous()` e `hasPrevious()` *(il nuovo add() aggiunge l'elemento prima dell'iteratore)*  
 
@@ -51,7 +50,7 @@ molto efficiente ad accedere all'i-esimo elemento, ma poco efficiente nell'inser
 
 ### Set
 se devo fare ricerca se un elemento è presente  
-se non necessita l'ordine ma il fatto che ogni elemnt compaia al più na volta  
+se non necessita l'ordine ma il fatto che ogni elemento compaia al più una volta  
 ##### HashSet
 per facilitare la comparazione degli elementi (per esempio per un `add()`) si usa `HashSet<E>` con `hashCode` (numero che deriva dall'oggetto)
 ad ogni struttura dati che ha un hashCode vengono attaccati tutti gli oggetti con quell'hashCode  

@@ -32,9 +32,11 @@ String second = pair.getSecond();
 
 ## generic methods
 anche i singoli metodi possono essere generici  
-`public static <T> T getMiddle(T... a) { /* ... */ } `  
+```
+public static <T> T getMiddle(T... a) { /* ... */ }
+```
+definite i tipi davanti al tipo di ritorno  
 `T... a` permette di inserire un numero imprecisato di parametri poi viene tramutato in `Array`  
-il tipo va davanti al tipo di ritorno  
 qui è il compilatore che vede dal tipo di ritorno e dai parametri quale sarà il tipo T (la priorità è sul tipo di ritorno)  
 si possono restringere i tipi concessi per conoscere con certezza che implementi certi metodi  
 ```
@@ -51,7 +53,7 @@ class ArrayAlg {
   }
 }
 ```
-`extends` si può utilizzare sia sui metodi che sulle classi e posso estendere quante interfacce voglio ma al massimo una classe  
+`T extends Comparable & Serializable` si può utilizzare sia sui metodi che sulle classi e posso estendere quante interfacce voglio ma al massimo una classe  
 
 ## type erasure
 all'interno della JVM i generics non esistono quindi nel *bytecode* non c'è alcun riferimento ai tipi generici, generando alcuni problemi  
@@ -98,8 +100,6 @@ public void setData(Object data) {
   setData((Integer) data);
 }
 ```
-
-
 anche se tra due classi c'è una gerarchia i tipi generici di quelle classi non mantengono la gerarchia  
 con i tipi `raw` è possibile evitare i safe-check ma è **altamente sconsigliato**  
 ma rimane l'ereditarità tra i tipi concreti per esempio `ArrayList<T>` implementa `List<T>` ma `T` deve essere lo stesso  
@@ -111,6 +111,7 @@ Pair<Manager> managerBuddies = new Pair<>(ceo, cfo);
 Pair<? extends Employee> wildcardBuddies = managerBuddies; // OK
 wildcardBuddies.setFirst(lowlyEmployee); // compile-time error
 ```
-ma le wildcard bloccano la scrittura si possono accedere solo in lettura  
+ma le wildcard bloccano la scrittura si possono accedere solo in lettura da usare come tipi di ritorno  
 per scricerci devo usare una wildcard di altro tipo  
-`Pair<? super Manager> `  
+`Pair<? super Manager> ` da usare com parametri e non come tipi di ritorno  
+le wildcard senza limiti `?` accettano come tipo di ritorno solo `Object` e come parametro solo `null` (e non è un tipo)

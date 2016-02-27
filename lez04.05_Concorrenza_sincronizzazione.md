@@ -1,60 +1,61 @@
 # Sincronizzazione nella programmazione concorrente
-ai giorni nostri molti pc hanno più core che possono essere sfruttati con i thread  
-si può sempificare il lavoro dei singoli thread suddividendo i compiti *(es calcoli con interfaccia grafica)*
-## Rischi dei thread
-### Safety hazard
-anche programmi banali in single-thread possono causare errori su thread multipli
-```
-public class UnsafeSequence {
-  private int value;
-  /** Returns a unique value. */
-  public void next() {
-    value++; // Three operations: read, add and store
-  }
-  public int getValue(){
-    return value;
-  }
- public static void main(String [] args){
-   final UnsafeSequence us = new UnsafeSequence();
-   for(int i=0;i<10000;i++){
-     new Thread(new Runnable(){
-       @Override
-       public void run() {
-         us.next();
-       }
-       }).start();
+- **riduzione dei costi e incremento delle performance**  
+  ai giorni nostri molti pc hanno più core che possono essere sfruttati con i thread  
+  si può sempificare il lavoro dei singoli thread suddividendo i compiti *(es calcoli con interfaccia grafica)*
+- **rischi dei thread**
+  - **safety hazard**  
+  anche programmi banali in single-thread possono causare errori su thread multipli
+  ```
+  public class UnsafeSequence {
+    private int value;
+    /** Returns a unique value. */
+    public void next() {
+      value++; // Three operations: read, add and store
+    }
+    public int getValue(){
+      return value;
+    }
+   public static void main(String [] args){
+     final UnsafeSequence us = new UnsafeSequence();
+     for(int i=0;i<10000;i++){
+       new Thread(new Runnable(){
+         @Override
+         public void run() {
+           us.next();
+         }
+         }).start();
+     }
+     Thread.sleep(60000);
+     System.out.println(us.getValue());
    }
-   Thread.sleep(60000);
-   System.out.println(us.getValue());
- }
-}
-```
-### Deadlock & Livelock
-**Deadlock** se non sincronizzo bene i thread uno potrebbe non partire mai perchè sta aspettando risorse da un altro e l'altro attende delle risorse che ha lui  
-**Livelock** il sistema non è bloccato ma un thread si e lo resta per sempre
+  }
+  ```
+  - **deadlock & livelock**  
+  **Deadlock** se non sincronizzo bene i thread uno potrebbe non partire mai perchè sta aspettando risorse da un altro e l'altro attende delle risorse che ha lui  
+  **Livelock** il sistema non è bloccato ma un thread si e lo resta per sempre
 
 ## Thread Safety
 tutte le condizioni non sono sul timing dei thread ma si basano sullo **stato** condiviso (share) e mutabile (mutable) dei thread  
 3 passi per avere un programma thread-safety:
 - non ho stati condivisi tra i thread
 - rendere lo stato immutabile (gli oggetti senza stato o con stato immutabile sono *sempre* thread safety)
-- utilizzare la Sincronizzazione
+- utilizzare la Sincronizzazione  
 
-se il mio programma non segue almeno uno dei punti sono sicuro che **NON** è thread-safety
+se il mio programma non segue almeno uno dei punti sono sicuro che **NON** è thread-safety  
+*encapsulation, immutability e specifiche chiare degli invarianti* favoriscono il thread-safe
 
 ## Race Condition
 avviene quando la correttezza di un'esecuzione avviene sul timing di thread multipli  
-bisogna rendere le **operazioni atomiche** (tutti i suoi passi vengono eseguiti)
+bisogna rendere le **operazioni atomiche** (tutti i suoi passi vengono eseguiti come una istruzione)
 - read-modify-write: legge modifica e riscrive
 - check-then-act: controlle ed eseguo  
+- Compound action  
+  sono sequanze di operazioni divise che però devono essere eseguite atomicamente in ordine per rimanere thres-safe  
+  ci sono classi che rendono le read-modify-write e le check-then-act atomiche in automatico: `AtomicInteger, ... ` sono contenute in `java.util.cuncurrent.atomic`  
+  se lo stato condiviso è maggiore di una variabile questo sistema non basta più
 
-### Compound action
-sono operazioni divise che però devono essere eseguite come una sola  
-ci sono classi che rendono le read-modify-write e le check-then-act atomiche in automatico: `AtomicInteger, ... `  
-se lo stato condiviso è maggiore di una variabile questo sistema non basta più
-
-### Synchronized Block
-#### Intrinsic lock
+## Synchronized Block
+### Intrinsic lock
 rende un intero blocco di operazioni atomiche  
 in java c'è la keyword `synchronized`
 ```
@@ -73,7 +74,7 @@ public void method() {
 ```
 questo metodo è atomico ma è molto inefficiente in quanto magari non tutto il codice deve essere sincronizzato
 
-#### Reentrant lock
+### Reentrant lock
 si chiama *reentrant* perchè un oggetto può richiamare più volte il metodo `lock()` sullo stesso oggetto `lock`, non crea errori perchè c'è un contatore nascosto che incrementa alla chiamata `lock()` e decrementa con `unlock()` il lock viene liberato quando il contatore torna a 0  
 questa funzione permette di poter fare subclassing delle classi con lock  
 ```
@@ -96,6 +97,8 @@ public class SafeCachedSequence {
 }
 ```
 l'unlock è inserito in un blocco finally per essere sempre sicuri di rilasciare alla fine dell'esecuzione sia che le cose vadano bene che male  
+i thread differenti devono sincronizzarsi usando la stessa istanza del lock  
+
 
 esiste un misto tra i due tipi di lock che usa il lock implicito ma si può scegliere la parte di codice su cui eseguirlo
 ```
@@ -113,6 +116,8 @@ public class SafeCachedSequence {
   }
 }
 ```
+non tutti i dati devono essere controllati da un lock (solo quelli mutabili)  
+tutte le variabili usate nella stessa invariante devono essere controllate dallo stesso lock (non è sufficiente un intrinsic lock in ogni metodo)
 
 ## Condition
 usiamo le condizioni per evitare deadlock  
@@ -154,7 +159,7 @@ gli **Intrinsic Lock** agiscono su tutto il metodo ma hanno sempre e solo una co
 avendo una sola condizione su tutti i lock siamo meno efficienti dovendo risvegliare tutti ad ogni risveglio  
 
 ### Consigli
-- i lock e synchronized non andrebbero mai usati perchè java possiede dei meccanismi più efficienti
+- i lock e synchronized non andrebbero mai usati perchè java possiede dei meccanismi più efficienti `java.util.concurrent`
 - nel caso si debbano usare sarebbero meglio gli Intrinsic Lock
 - usare i Lock/Condition se proprio dobbiamo
 
@@ -194,17 +199,18 @@ nella JVM si può limitare il reordering
 - una variabile `final` è sempre visibile dopo l'iniializzazione
 - una variabile `static` è sempre visibile dopo l'iniializzazione
 - le modifiche ad una variabile `volatile` sono visibili
-- cambiamenti successe prma di rilasciare un lock sono visibili a chiunque acquisisce il lock  
-utilizzare final per il maggiorn numero di variabili risulta quindi molto consigliato
+- cambiamenti successe prma di rilasciare un lock sono visibili a chiunque acquisisce il lock
 
-### volatile
+***utilizzare final per il maggiorn numero di variabili risulta quindi molto consigliato***
+
+### Varibili volatili
 le variabili volatili non vengono mai tenute in cache e vengono ogni volta recuperate in RAM e per questo motivo sono sempre visibili ai Thread in quanto ogni volta deve andarla a leggere non risolvono però l'atomicità  
 nell'esempio di prima si poteva definire `private static volatile boolean guard = false;` per risolvere il problema  
 sono consigliate per lo status flag (check)  
 
 ## Thread Confinement
-la maggior parte delle classi della JDK non sono sincronizzate (per non incidere sulle prestazioni), quindi forniamo ad ogni thread una diversa istanza si un oggetto utilizzando i `ThreadLocal` (generics)  
-invece di condividere lo stato viene replicato e quando i lthred termina diventa garbage
+la maggior parte delle classi della JDK non sono sincronizzate (per non incidere sulle prestazioni), quindi forniamo ad ogni thread una diversa istanza di un oggetto utilizzando i `ThreadLocal` (generics)  
+invece di condividere lo stato viene replicato e quando i thread termina diventa garbage
 ```
 public class A{
   private static ThreadLocal<SimpleDateFormat> dateFormat = new ThreadLocal<SimpleDateFormat>() {
@@ -233,6 +239,7 @@ un oggetto è immutabile se:
 - il suo stato non può essere modificato dopo la sua costruzione
 - tutti i propri campi sono marcati `final`
 - la classe deve essere costruita correttamente (non devo passare il `this` al di fuori della classe dal costruttore)  
+
 non è presente il `const` ma il final può essere acceduto senza sincronizzazione addizionale  
 il final non permette di ridefinire l'oggetto ma si può modificare lo stato dell'oggetto (es. un array)  
 nelle classi immutabili se costuiamo un quasiasi oggetto che non è primitivo dobbiamo sempre costruirlo con una copia altrimenti chi ci ha richiamato mantiene un riferimento all'oggetto  
